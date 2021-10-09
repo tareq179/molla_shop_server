@@ -5,16 +5,17 @@ const router = require("express").Router();
 
 
 //CREATE
-router.post("/", verifyToken, async(req, res)=>{
-    const newOrder = new Order(req.body);
 
-    try{
-        const savedOrder = await newOrder.save();
-        res.status(200).json(savedOrder);
-    }catch(err){
-        res.status(200).json(err);
-    }
-})
+router.post("/", verifyToken, async (req, res) => {
+  const newOrder = new Order(req.body);
+
+  try {
+    const savedOrder = await newOrder.save();
+    res.status(200).json(savedOrder);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
 
 
 // UPDATE
@@ -46,7 +47,7 @@ router.delete("/:id", verifyTokenAndAdmin, async(req, res)=>{
 //GET USER ORDERS
 router.get("/find/:userId", verifyTokenAndAuthorization, async(req, res)=>{
     try{
-        const order = await Order.findById({userId: req.params.userId});
+        const order = await Order.find({userId: req.params.userId});
         res.status(200).json(order)
     }catch(err){
         res.status(500).json(err)
@@ -56,27 +57,28 @@ router.get("/find/:userId", verifyTokenAndAuthorization, async(req, res)=>{
 //GET All 
 router.get("/", verifyTokenAndAdmin,  async (req, res) => {
     try {
-      const carts = await Cart.find();
+      const orders = await Order.find();
 
-      res.status(200).json(carts);
+      res.status(200).json(orders);
     } catch (err) {
       res.status(500).json(err);
     }
   });
 
   //GET MONTHLY INCOME
-router.get("/stats", verifyTokenAndAdmin, async (req, res) => {
+
+  router.get("/income", verifyTokenAndAdmin, async (req, res) => {
     const date = new Date();
     const lastMonth = new Date(date.setMonth(date.getMonth() - 1));
     const previousMonth = new Date(new Date().setMonth(lastMonth.getMonth() - 1));
   
     try {
       const income = await Order.aggregate([
-        { $match: { createdAt: { $gte: preciousMonth } } },
+        { $match: { createdAt: { $gte: previousMonth } } },
         {
           $project: {
             month: { $month: "$createdAt" },
-            sales:"$amount"
+            sales: "$amount",
           },
         },
         {
@@ -86,7 +88,7 @@ router.get("/stats", verifyTokenAndAdmin, async (req, res) => {
           },
         },
       ]);
-      res.status(200).json(income)
+      res.status(200).json(income);
     } catch (err) {
       res.status(500).json(err);
     }
